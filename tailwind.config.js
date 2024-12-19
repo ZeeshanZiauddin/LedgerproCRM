@@ -11,7 +11,7 @@ export default {
         "./vendor/savannabits/filament-flatpickr/**/*.blade.php",
         "./vendor/guava/calendar/resources/**/*.blade.php",
         "./vendor/awcodes/filament-quick-create/resources/**/*.blade.php",
-        "\vendor/awcodes/overlook/resources/**/*.blade.php",
+        "./vendor/awcodes/overlook/resources/**/*.blade.php",
     ],
     theme: {
         extend: {

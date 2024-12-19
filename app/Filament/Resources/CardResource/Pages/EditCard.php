@@ -13,7 +13,15 @@ class EditCard extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('create_receipt')
+                ->label('Create Receipt')
+                ->icon('heroicon-s-document-plus')
+                ->url(function ($record) {
+                    return route('filament.admin.resources.receipts.create', ['card_id' => $record->id]);
+                })
+                ->color('primary'),
             Actions\DeleteAction::make(),
+
         ];
     }
 }

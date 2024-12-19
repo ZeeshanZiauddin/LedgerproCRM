@@ -31,6 +31,23 @@ class Card extends Model
         'margin'
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically set `card_name` and `user_id` when creating a new card
+        static::creating(function ($card) {
+            // Generate a new card_name
+            $latestInquiry = Card::latest('id')->first(); // Get the latest card
+            $latestNumber = $latestInquiry ? (int) substr($latestInquiry->card_name, 2) : 0; // Extract the number part and increment it
+            $newNumber = str_pad($latestNumber + 1, 7, '0', STR_PAD_LEFT); // Increment and pad the number with leading zeros
+
+            $card->card_name = 'QT' . $newNumber; // Prefix with "QT"
+
+            // Set the user_id to the currently logged-in user
+            $card->user_id = auth()->id();
+        });
+    }
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

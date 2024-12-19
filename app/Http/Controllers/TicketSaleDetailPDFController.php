@@ -1,14 +1,17 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\CardPassenger;
-use App\Models\Customer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class TicketSaleDetailPDFController extends Controller
 {
+    public $customer_id;
+    public $date_range_data;
+
     public function preview(Request $request)
     {
         $customer_id = $request->get('customer_id');
@@ -16,69 +19,69 @@ class TicketSaleDetailPDFController extends Controller
 
         $query = CardPassenger::query();
 
-        // Apply date range filter if specified
         if ($date_range) {
             $date = Carbon::now();
 
             switch ($date_range) {
                 case 'last_year':
+                    $this->date_range_data = 'Records of Last year';
                     $query->where('created_at', '>=', $date->subYear());
                     break;
                 case '6_months':
+                    $this->date_range_data = 'Records of Last 6 Months';
                     $query->where('created_at', '>=', $date->subMonths(6));
                     break;
                 case '3_months':
+                    $this->date_range_data = 'Records of Last 3 months';
+
                     $query->where('created_at', '>=', $date->subMonths(3));
                     break;
                 case 'this_month':
+                    $this->date_range_data = 'Records of This month';
+
                     $query->whereMonth('created_at', $date->month);
                     break;
                 case '7_days':
+                    $this->date_range_data = 'Records of last 7 days';
+
                     $query->whereBetween('created_at', [$date->subDays(7)->startOfDay(), now()]);
                     break;
             }
         }
 
-        // Eager load the 'card' relationship and the related 'receipts'
         $passengers = $query->with('card.receipts')->get();
 
-        // Prepare the data structure
-        $receipts = $passengers->map(function ($passenger) {
-            // Combine ticket_1 and ticket_2
-            $ticket = $passenger->ticket_1 . $passenger->ticket_2;
+        // Group passengers by card and assign record numbers
+        $groupedPassengers = $passengers->groupBy('card_id');
 
-            // Extract sale, cost, tax, margin from the passenger
-            $sale = $passenger->sale;
-            $cost = $passenger->cost;
-            $tax = $passenger->tax;
-            $margin = $passenger->margin;
+        $receipts = $groupedPassengers->flatMap(function ($group) {
+            return $group->map(function ($passenger, $index) {
+                $ticket = $passenger->ticket_1 . $passenger->ticket_2;
 
-            // Sum the total field from all related receipts (make sure the total is numeric)
-            $total = $passenger->card->receipts->sum(function ($receipt) {
-                return (float) $receipt->total; // Convert the total from string to float
+                return [
+                    'record_number' => $index + 1, // Assign sequential numbers
+                    'date' => $passenger->created_at->format('dMY'),
+                    'ticket' => $ticket ?? 'N/A',
+                    'card_name' => $passenger->card->card_name,
+                    'sale' => $passenger->sale,
+                    'cost' => $passenger->cost,
+                    'tax' => $passenger->tax,
+                    'margin' => ($passenger->sale - ($passenger->cost + $passenger->tax)),
+                    'date_range' => $this->date_range_data,
+                ];
             });
-
-            // Return the formatted data for each passenger/card
-            return [
-                'created_at' => $passenger->created_at,
-                'ticket' => $ticket,
-                'card_name' => $passenger->card->card_name, // Card name
-                'sale' => $sale,
-                'cost' => $cost,
-                'tax' => $tax,
-                'margin' => $margin,
-                'total' => $total // Sum of all receipts' total
-            ];
         });
 
         if ($receipts->isEmpty()) {
             return response('No receipts found for the selected filters.', 404);
         }
 
-        // Generate the PDF
-        $pdf = Pdf::loadView('filament.pages.ticket-sale-details', compact('receipts'))
+        $pdf = Pdf::loadView('filament.pages.reports.ticket-sale-pdf', compact('receipts'))
+            ->setOption('font', 'Serif')
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream('ticket-sale-details-' . Carbon::now()->format('YmdHis') . '.pdf');
     }
+
+
 }

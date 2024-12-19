@@ -24,10 +24,9 @@ class SupplierResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('code')
-                    ->required()
                     ->unique(Supplier::class, 'code')
-                    ->disabled() // Read-only, auto-generated
-                    ->maxLength(255),
+                    ->placeholder('Auto generated')
+                    ->disabled(),
                 Forms\Components\TextInput::make('name')->required()->maxLength(255),
                 Forms\Components\TextInput::make('email')->email()->nullable(),
                 Forms\Components\TextInput::make('phone_no')->tel()->nullable(),

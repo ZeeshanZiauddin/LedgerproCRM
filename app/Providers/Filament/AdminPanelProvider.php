@@ -37,6 +37,7 @@ use lockscreen\FilamentLockscreen\Http\Middleware\LockerTimer;
 use Rmsramos\Activitylog\ActivitylogPlugin;
 use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
+use TomatoPHP\FilamentNotes\Filament\Widgets\NotesWidget;
 use TomatoPHP\FilamentNotes\FilamentNotesPlugin;
 use TomatoPHP\FilamentPWA\FilamentPWAPlugin;
 use Awcodes\FilamentQuickCreate\QuickCreatePlugin;
@@ -66,6 +67,7 @@ class AdminPanelProvider extends PanelProvider
                 TopSalesPerson::class,
                 TopCustomer::class,
                 MonthlyRevenueReport::class,
+                NotesWidget::class
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -113,7 +115,6 @@ class AdminPanelProvider extends PanelProvider
                         \App\Filament\Resources\CustomerResource::class,
                         \App\Filament\Resources\SupplierResource::class,
                         \App\Filament\Resources\AirlineResource::class,
-                        \App\Filament\Resources\CardResource::class,
                     ])
                     ->alwaysShowModal()
                     ->keyBindings(['command+shift+a', 'ctrl+m']),

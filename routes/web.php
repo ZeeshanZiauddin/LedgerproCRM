@@ -9,6 +9,6 @@ Route::get('/', function () {
 
 use App\Http\Controllers\PDFController;
 
-Route::get('ticket-sale-details/preview', [TicketSaleDetailPDFController::class, 'preview'])->name('generate.ticketdetails.pdf.preview');
+Route::get('/generate-pdf-preview', [PDFController::class, 'preview'])->name('generate.pdf.preview');
 
-Route::get('ticket-sale-details/preview', [TicketSaleDetailPDFController::class, 'preview'])->name('generate.ticketdetails.pdf.preview');
+Route::get('/ticketdetails/preview', [TicketSaleDetailPDFController::class, 'preview'])->name('ticketdetails.preview');

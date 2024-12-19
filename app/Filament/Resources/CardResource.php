@@ -5,11 +5,17 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CardResource\Pages;
 use App\Models\Card;
 use App\Models\Receipt;
+use Carbon\Carbon;
 use Filament\Actions\MountableAction;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists;
+use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontFamily;
@@ -19,7 +25,8 @@ use Filament\Tables\Table;
 use Filament\Forms\Components\Group;
 use Guava\FilamentClusters\Forms\Cluster;
 use Icetalker\FilamentTableRepeatableEntry\Infolists\Components\TableRepeatableEntry;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Illuminate\Database\Eloquent\Builder;
 
 class CardResource extends Resource
@@ -33,18 +40,30 @@ class CardResource extends Resource
         return $form
             ->schema([
                 // Group for card details
+                Forms\Components\TextInput::make('card_name')
+                    ->default(fn() => CardResource::generateCardName()) // Call the generateInquiryName method
+                    ->disabled() // Disable the field to prevent manual editing
+                    ->required()
+                    ->label('Card No.')
+                    ->unique(ignoreRecord: true),
+                Forms\Components\DatePicker::make('created_at')
+                    ->displayFormat('d-M-Y')
+                    ->native(false)
+                    ->default(fn() => Carbon::now())->disabled()
+                    ->label('Date'),
+                Forms\Components\DatePicker::make('created_at')
+                    ->native(false)
+
+                    ->default(fn() => Carbon::now()->format('Y'))->disabled()
+                    ->displayFormat('Y')
+                    ->label('Year'),
+                Forms\Components\Select::make('user_id')
+                    ->label('Owner')
+                    ->default(fn() => auth()->user()->id)
+                    ->relationship('user', 'name')->disabled(),
+
                 Group::make()
                     ->schema([
-                        Forms\Components\TextInput::make('card_name')
-                            ->default(fn() => CardResource::generateCardName()) // Call the generateInquiryName method
-                            ->disabled() // Disable the field to prevent manual editing
-                            ->required()
-                            ->label('Card No.')
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\Select::make('user_id')
-                            ->label('Owner')
-                            ->default(fn() => auth()->user()->id)
-                            ->relationship('user', 'name')->disabled(),
 
                         Forms\Components\Select::make('customer_id')
                             ->relationship('customer', 'name')  // Relationship to the Customer model, assuming it has a `name` field
@@ -73,58 +92,46 @@ class CardResource extends Resource
                         Forms\Components\TextInput::make('contact_name')->nullable(),
                         Forms\Components\TextInput::make('contact_email')
                             ->nullable(),
-                        Forms\Components\TextInput::make('contact_mobile')->nullable(),
-                        Forms\Components\TextInput::make('contact_home_number')->nullable(),
-                        Forms\Components\Textarea::make('contact_address')->nullable(),
-                    ])->columns(1)->columnSpan(1),
+                        Forms\Components\TextInput::make('contact_address')->nullable(),
+                    ])->columns(1)->columnSpan(2),
                 Group::make()
                     ->schema([
-                        Forms\Components\TextInput::make('sales_price')
+                        Forms\Components\TextInput::make('contact_mobile')->nullable(),
+                        Forms\Components\TextInput::make('contact_home_number')->nullable(),
+                    ]),
+
+                Grid::make([
+                    'default' => 5,
+                ])
+                    ->schema([
+                        TextInput::make('sales_price')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $netCost = $get('net_cost');
-                                $tax = $get('tax');
-                                if ($state > 1 && $netCost > 1 && $tax > 1) {
-                                    $set('margin', $state - ($netCost + $tax));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->required()
+                            ->extraAttributes(['x-model.number' => 'sales_price']), // Alpine.js binding
 
-                        Forms\Components\TextInput::make('net_cost')
+                        TextInput::make('net_cost')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $salesPrice = $get('sales_price');
-                                $tax = $get('tax');
-                                if ($salesPrice > 1 && $state > 1 && $tax > 1) {
-                                    $set('margin', $salesPrice - ($state + $tax));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->required()
+                            ->extraAttributes(['x-model.number' => 'net_cost']), // Alpine.js binding
 
-                        Forms\Components\TextInput::make('tax')
+                        TextInput::make('tax')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $salesPrice = $get('sales_price');
-                                $netCost = $get('net_cost');
-                                if ($salesPrice > 1 && $netCost > 1 && $state > 1) {
-                                    $set('margin', $salesPrice - ($netCost + $state));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->required()
+                            ->extraAttributes(['x-model.number' => 'tax']), // Alpine.js binding
 
-                        Forms\Components\TextInput::make('margin')
-                            ->numeric()
+                        TextInput::make('margin')
                             ->default(0)
-                            ->readOnly(),
+                            ->readOnly()
+                            ->extraAttributes([
+                                'x-text' => 'sales_price - (net_cost + tax)', // Allow margin to be negative
+                                'x-init' => '() => margin = sales_price - (net_cost + tax)' // Initialize margin value based on the fields
+                            ]),
 
                         Forms\Components\TextInput::make('total_paid')
                             ->readOnly()
@@ -135,105 +142,103 @@ class CardResource extends Resource
                                     $set('total_paid', $record->receipts()->sum('total'));
                                 }
                             }),
-
                     ])
-                    ->columns(1)
-                    ->columnSpan(1),
+                    ->columns(5)
+                    ->extraAttributes(['x-data' => '{ sales_price: 0, net_cost: 0, tax: 0 }']), // Alpine.js data at the grid level
 
-                // Repeater for passengers
-                TableRepeater::make('passengers')
+                TableRepeater::make('users')
                     ->relationship('passengers')
+                    ->headers([
+                        Header::make('Passenger Name')->width('250px')->markAsRequired(),
+                        Header::make('Ticket')->width('120px'),
+                        Header::make('')->width('180px'),
+                        Header::make('Issue date')->width('150px'),
+                        Header::make('Option date')->width('150px'),
+                        Header::make('Sale')->width('140px'),
+                        Header::make('Net')->width('140px'),
+                        Header::make('Cost')->width('140px'),
+                        Header::make('Profit')->width('140px'),
+                        Header::make('Pnr')->width('150px'),
+                    ])
                     ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required(),
 
                         Forms\Components\Select::make('ticket_1')
                             ->label('Tkt no.')
-                            ->placeholder(placeholder: '000')
+                            ->placeholder('000')
+                            ->native(false)
                             ->relationship('airline', 'code')
                             ->nullable(),
+
                         Forms\Components\TextInput::make('ticket_2')
                             ->label(false)
                             ->placeholder('0000000000')
-                            ->maxLength(10)  // Limit to 10 characters
-                            ->minLength(10)  // Ensure a minimum of 10 characters
+                            ->maxLength(10)
+                            ->minLength(10)
                             ->nullable(),
 
-                        Forms\Components\TextInput::make('name')
-                            ->required(),
                         Forms\Components\DatePicker::make('issue_date')
                             ->native(false)
                             ->displayFormat('d M y')
                             ->default(now())
                             ->placeholder('dd mm yy'),
+
                         Forms\Components\DatePicker::make('option_date')
                             ->native(false)
                             ->placeholder('dd mm yy')
                             ->displayFormat('d M y')
                             ->nullable(),
+
                         Forms\Components\TextInput::make('sale')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $netCost = $get('cost');
-                                $tax = $get('tax');
-                                if ($state > 1 && $netCost > 1 && $tax > 1) {
-                                    $set('margin', $state - ($netCost + $tax));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->extraAttributes([
+                                'x-model.number' => 'sale', // Alpine.js binding
+                            ]),
 
                         Forms\Components\TextInput::make('cost')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $salesPrice = $get('sale');
-                                $tax = $get('tax');
-                                if ($salesPrice > 1 && $state > 1 && $tax > 1) {
-                                    $set('margin', $salesPrice - ($state + $tax));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->extraAttributes([
+                                'x-model.number' => 'cost', // Alpine.js binding
+                            ]),
 
                         Forms\Components\TextInput::make('tax')
                             ->numeric()
                             ->default(0)
                             ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $salesPrice = $get('sale');
-                                $netCost = $get('cost');
-                                if ($salesPrice > 1 && $netCost > 1 && $state > 1) {
-                                    $set('margin', $salesPrice - ($netCost + $state));
-                                } else {
-                                    $set('margin', 0);
-                                }
-                            }),
+                            ->extraAttributes([
+                                'x-model.number' => 'tax', // Alpine.js binding
+                            ]),
 
                         Forms\Components\TextInput::make('margin')
                             ->numeric()
                             ->default(0)
-                            ->disabled(),
+                            ->readOnly()
+                            ->extraAttributes([
+                                'x-text' => 'sale - (cost + tax)', // Alpine.js margin calculation
+                                'x-init' => 'margin = sale - (cost + tax)', // Initialize margin value based on the fields
+                                'class' => 'py-0.5 ps-2'
+                            ]),
 
                         Forms\Components\TextInput::make('pnr')
                             ->nullable(),
                     ])
-                    ->columnSpanFull()
-                    ->columns(2)
-                    ->colStyles([
-                        'ticket_1' => 'width: 80px;',
-                        'ticket_2' => 'width: 140px;',
-                        'issue_date' => 'width: 110px;',
-                        'option_date' => 'width: 110px;',
-                        'sale' => 'width: 80px;',
-                        'cost' => 'width: 80px;',
-                        'tax' => 'width: 80px;',
-                        'margin' => 'width: 80px;',
+                    ->extraAttributes([
+                        'x-data' => '({ sale: 0, cost: 0, tax: 0, margin: 0 })', // Alpine.js data model per row
                     ])
-                    ->required(),
-            ])->columns(3);
+                    ->columnSpanFull(),
+
+
+
+
+
+            ])->columns(4);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -280,7 +285,18 @@ class CardResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->slideOver(),
+                    ->slideOver()
+                    ->modalActions([
+                        Tables\Actions\ButtonAction::make('receipts')
+                            ->label('Make Receipt')
+                            ->color('warning')
+                            ->icon('heroicon-s-document-plus')
+                            ->url(function ($record) {
+                                return route('filament.admin.resources.receipts.create', ['card_id' => $record->id]);
+                            })
+                    ]),
+
+
                 Tables\Actions\EditAction::make()
                     ->color('warning'),
                 Tables\Actions\ActionGroup::make([
@@ -383,6 +399,7 @@ class CardResource extends Resource
                             ->label('PNR')
                             ->copyable()
                             ->fontFamily(FontFamily::Mono)
+
                     ])
                     ->columnSpanFull(),
                 TableRepeatableEntry::make('receipts')
@@ -410,6 +427,7 @@ class CardResource extends Resource
                         Infolists\Components\TextEntry::make('user.name')->label('issued_by'),
                         Infolists\Components\TextEntry::make('created_at')->label('Created At')
                             ->date(),
+
                     ])
                     ->columnSpanFull(),
             ])
@@ -428,7 +446,7 @@ class CardResource extends Resource
         return [
             'index' => Pages\ListCards::route('/'),
             // 'create' => Pages\CreateCard::route('/create'),
-            // 'edit' => Pages\EditCard::route('/{record}/edit'),
+            'edit' => Pages\EditCard::route('/{record}/edit'),
         ];
     }
     public static function generateCardName(): string
@@ -438,5 +456,16 @@ class CardResource extends Resource
         $newNumber = str_pad($latestNumber + 1, 7, '0', STR_PAD_LEFT); // Increment and pad the number with leading zeros
 
         return 'QT' . $newNumber; // Prefix with "QR"
+    }
+
+    protected static function calculateMargin($set, $get)
+    {
+        // Ensure values are cast to integers or floats
+        $salesPrice = (float) ($get('sales_price') ?? 0);
+        $netCost = (float) ($get('net_cost') ?? 0);
+        $tax = (float) ($get('tax') ?? 0);
+
+        $margin = $salesPrice - ($netCost + $tax);
+        $set('margin', max($margin, 0));
     }
 }
