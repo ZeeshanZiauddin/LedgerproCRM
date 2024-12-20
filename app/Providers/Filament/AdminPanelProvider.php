@@ -8,6 +8,8 @@ use App\Filament\Widgets\TopCustomer;
 use App\Filament\Widgets\TopSalesPerson;
 use Awcodes\Overlook\OverlookPlugin;
 use Awcodes\Overlook\Widgets\OverlookWidget;
+use Awcodes\Recently\RecentlyPlugin;
+use Awcodes\Recently\Resources\RecentEntryResource;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use EightyNine\Reports\ReportsPlugin;
@@ -20,6 +22,7 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
 use Hasnayeen\Themes\ThemesPlugin;
+use Howdu\FilamentRecordSwitcher\FilamentRecordSwitcherPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -116,9 +119,13 @@ class AdminPanelProvider extends PanelProvider
                         \App\Filament\Resources\SupplierResource::class,
                         \App\Filament\Resources\AirlineResource::class,
                     ])
+                    ->excludes([
+                        RecentEntryResource::class,
+                    ])
                     ->alwaysShowModal()
                     ->keyBindings(['command+shift+a', 'ctrl+m']),
-
+                FilamentRecordSwitcherPlugin::make(),
+                RecentlyPlugin::make(),
                 ThemesPlugin::make(),
                 FilamentBackgroundsPlugin::make()
                     ->remember(900),
@@ -131,6 +138,9 @@ class AdminPanelProvider extends PanelProvider
                         'lg' => 4,
                         'xl' => 5,
                         '2xl' => null,
+                    ])
+                    ->excludes([
+                        RecentEntryResource::class,
                     ]),
                 FilamentNotesPlugin::make()
                     ->useStatus()

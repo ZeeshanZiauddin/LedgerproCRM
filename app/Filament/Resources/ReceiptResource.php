@@ -3,11 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
-use App\Filament\Resources\ReceiptResource\RelationManagers;
 use App\Models\Card;
 use App\Models\Receipt;
 use Carbon\Carbon;
-use Coolsam\FilamentFlatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\TextEntry;
@@ -18,13 +16,14 @@ use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReceiptResource extends Resource
 {
     protected static ?string $model = Receipt::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
+
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Form $form): Form
     {
@@ -193,6 +192,8 @@ class ReceiptResource extends Resource
         return [
             'index' => Pages\ListReceipts::route('/'),
             'create' => Pages\CreateReceipt::route('/create'),
+            'edit' => Pages\EditReceipt::route('/{record}/edit'),
+
         ];
     }
     public static function generateName(): string

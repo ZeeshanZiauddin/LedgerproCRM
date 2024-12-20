@@ -5,9 +5,11 @@ namespace App\Filament\Resources\ReceiptResource\Pages;
 use App\Filament\Resources\ReceiptResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use JoseEspinal\RecordNavigation\Traits\HasRecordsList;
 
 class ListReceipts extends ListRecords
 {
+    use HasRecordsList;
     protected static string $resource = ReceiptResource::class;
 
     protected function getCard(): ?string

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e7d95d3fb9c7f5eab0c3ce3c35d52476",
+    "content-hash": "0c5aad9a6b0875bc53b2ebe721243067",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -278,6 +278,81 @@
                 }
             ],
             "time": "2024-02-17T17:08:57+00:00"
+        },
+        {
+            "name": "awcodes/recently",
+            "version": "v1.0.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/awcodes/recently.git",
+                "reference": "4aada0ffb8580b97de254b47ee2723a206dc856f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/awcodes/recently/zipball/4aada0ffb8580b97de254b47ee2723a206dc856f",
+                "reference": "4aada0ffb8580b97de254b47ee2723a206dc856f",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.9",
+                "orchestra/testbench": "^8.0",
+                "pestphp/pest": "^2.1",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "pestphp/pest-plugin-livewire": "^2.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awcodes\\Recently\\RecentlyServiceProvider"
+                    ],
+                    "aliases": {
+                        "Recently": "Awcodes\\Recently\\Facades\\Recently"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awcodes\\Recently\\": "src/",
+                    "Awcodes\\Recently\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Adam Weston",
+                    "email": "awcodes1@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Easily track and access recently viewed records in your filament panels.",
+            "homepage": "https://github.com/awcodes/recently",
+            "keywords": [
+                "awcodes",
+                "laravel",
+                "recently"
+            ],
+            "support": {
+                "issues": "https://github.com/awcodes/recently/issues",
+                "source": "https://github.com/awcodes/recently"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/awcodes",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-10-25T19:22:52+00:00"
         },
         {
             "name": "aymanalhattami/filament-context-menu",
@@ -3526,6 +3601,89 @@
             "time": "2024-04-10T06:31:54+00:00"
         },
         {
+            "name": "howdu/filament-record-switcher",
+            "version": "v1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/howdu/filament-record-switcher.git",
+                "reference": "7c05aa1cb33016bb17fd7e2256f3ac8128ef74f1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/howdu/filament-record-switcher/zipball/7c05aa1cb33016bb17fd7e2256f3ac8128ef74f1",
+                "reference": "7c05aa1cb33016bb17fd7e2256f3ac8128ef74f1",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "filament/forms": "^3.0",
+                "filament/tables": "^3.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.9",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^8.0",
+                "pestphp/pest": "^2.1",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "pestphp/pest-plugin-livewire": "^2.1",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "FilamentRecordSwitcher": "Howdu\\FilamentRecordSwitcher\\Facades\\FilamentRecordSwitcher"
+                    },
+                    "providers": [
+                        "Howdu\\FilamentRecordSwitcher\\FilamentRecordSwitcherServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Howdu\\FilamentRecordSwitcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ben",
+                    "email": "howdu3@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Resource level navigation with search",
+            "homepage": "https://github.com/howdu/filament-record-switcher",
+            "keywords": [
+                "filament",
+                "filament-plugin",
+                "filament-record-switcher",
+                "howdu",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/howdu/filament-record-switcher/issues",
+                "source": "https://github.com/howdu/filament-record-switcher"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/howdu",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-10-31T17:44:58+00:00"
+        },
+        {
             "name": "icetalker/filament-table-repeatable-entry",
             "version": "v1.0.3",
             "source": {
@@ -6349,6 +6507,63 @@
                 }
             ],
             "time": "2024-11-29T09:45:53+00:00"
+        },
+        {
+            "name": "parallax/filament-comments",
+            "version": "1.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/parallax/filament-comments.git",
+                "reference": "05608725a4c9fa78707dbff2970e35bb04f555bd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/parallax/filament-comments/zipball/05608725a4c9fa78707dbff2970e35bb04f555bd",
+                "reference": "05608725a4c9fa78707dbff2970e35bb04f555bd",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "illuminate/contracts": "^10.0 | ^11.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Parallax\\FilamentComments\\FilamentCommentsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Parallax\\FilamentComments\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Parallax",
+                    "email": "luke@parall.ax",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Add comments to your Filament Resources.",
+            "homepage": "https://github.com/parallax/filament-comments",
+            "keywords": [
+                "filament-comments",
+                "laravel",
+                "parallax"
+            ],
+            "support": {
+                "issues": "https://github.com/parallax/filament-comments/issues",
+                "source": "https://github.com/parallax/filament-comments"
+            },
+            "time": "2024-06-06T13:45:53+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",

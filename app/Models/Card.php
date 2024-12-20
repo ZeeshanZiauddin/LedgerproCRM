@@ -4,13 +4,14 @@ namespace App\Models;
 use App\Filament\Resources\CardResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class Card extends Model
 {
 
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, HasFilamentComments;
 
 
     protected $fillable = [
