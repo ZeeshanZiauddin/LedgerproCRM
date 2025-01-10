@@ -13,7 +13,7 @@
         // https://github.com/filamentphp/filament/issues/7087
         'bg-white/0',
         'ps-0' => $inlinePrefix,
-        'ps-3' => !$inlinePrefix,
+        'ps-2' => !$inlinePrefix,
         'pe-0' => $inlineSuffix,
-        'pe-3' => !$inlineSuffix,
+        'pe-2' => !$inlineSuffix,
     ]) }} />

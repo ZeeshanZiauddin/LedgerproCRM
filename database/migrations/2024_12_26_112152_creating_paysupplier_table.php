@@ -10,13 +10,14 @@ return new class extends Migration {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('supplier_id');
-            $table->unsignedBigInteger('user_id');
-            $table->decimal('amount', 15, 2); // Calculated payment amount
-            $table->text('passenger_ids'); // Store selected passenger ids
+            $table->string('cheque_no')->nullable(); // Cheque number (optional)
+            $table->string('bank')->nullable(); // Bank name (optional)
+            $table->decimal('total', 15, 2); // Total payment amount
+            $table->text('tickets')->nullable(); // Associated ticket (card passenger) IDs
+            $table->text('details')->nullable(); // Additional payment details
             $table->timestamps();
 
-            $table->foreign('supplier_id')->references('id')->on('suppliers');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('cascade');
         });
     }
 

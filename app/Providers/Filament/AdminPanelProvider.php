@@ -144,6 +144,7 @@ class AdminPanelProvider extends PanelProvider
                         'America/New_York',
                         'America/Sao_Paulo',
                         'Asia/Tokyo',
+                        'Europe/London',
                     ])
                     ->setTimeFormat('H:i') //Optional time format default is: 'H:i'
                     ->shouldShowTitle(false) //Optional show title default is: true

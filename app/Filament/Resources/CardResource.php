@@ -5,17 +5,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CardResource\Pages;
 use App\Filament\Resources\CardResource\RelationManagers\ReceiptsRelationManager;
 use App\Models\Card;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Filament\Forms;
-use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Forms\Set;
 use Filament\Infolists;
-use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontFamily;
@@ -23,7 +20,6 @@ use Filament\Tables;
 use Filament\Tables\Filters\QueryBuilder\Constraints\DateConstraint;
 use Filament\Tables\Table;
 use Filament\Forms\Components\Group;
-use Guava\FilamentClusters\Forms\Cluster;
 use Guava\FilamentModalRelationManagers\Actions\Table\RelationManagerAction;
 use Icetalker\FilamentTableRepeatableEntry\Infolists\Components\TableRepeatableEntry;
 use Awcodes\TableRepeater\Components\TableRepeater;
@@ -31,8 +27,6 @@ use Awcodes\TableRepeater\Header;
 use Filament\Forms\Components\Tabs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\HtmlString;
 
 class CardResource extends Resource
 {
@@ -51,6 +45,7 @@ class CardResource extends Resource
                     Group::make()
                         ->schema([
                             Forms\Components\TextInput::make('card_name')
+                                ->default(self::generateCardName())
                                 ->disabled() // Disable the field to prevent manual editing
                                 ->inlineLabel()
                                 ->label('Card No.'),
@@ -69,10 +64,11 @@ class CardResource extends Resource
                             Forms\Components\Select::make('airline_id')
                                 ->placeholder('000')
                                 ->inlineLabel()
-                                ->relationship('airline', modifyQueryUsing: fn(Builder $query) => $query->orderBy('first_name')->orderBy('last_name'), )
+                                ->relationship('airline', modifyQueryUsing: fn(Builder $query) => $query->orderBy('code')->orderBy('iata'), )
                                 ->getOptionLabelFromRecordUsing(fn(Model $record) => "{$record->code} {$record->iata}")
                                 ->searchable(['code', 'iata'])
                                 ->native(false)
+                                ->preload()
                                 ->getOptionLabelUsing(function ($value) {
                                     $airline = \App\Models\Airline::find($value);
                                     return $airline ? $airline->iata . ' - ' . $airline->code : 'Unknown';
@@ -162,17 +158,23 @@ class CardResource extends Resource
                                 ->afterStateUpdated(
                                     function ($state, $set, $get) {
                                         $lines = explode("\n", $state);
-                                        $passengers = [];
-                                        $flights = [];
+                                        $newPassengers = [];
+                                        $newFlights = [];
+                                        $pnr = null;
                                         $airline = $get('airline_id');
 
                                         foreach ($lines as $line) {
                                             $line = trim($line);
 
+                                            // Parse PNR from the first line
+                                            if (preg_match('/^\d+[A-Z]+\d+/', $line, $pnrMatches)) {
+                                                $pnr = $pnrMatches[0]; // Capture PNR
+                                            }
+
                                             // Parse passengers
                                             if (preg_match_all('/\d+\.\d+([A-Z\/ ]+ [A-Z]{2,4})/', $line, $matches)) {
                                                 foreach ($matches[1] as $name) {
-                                                    $passengers[] = [
+                                                    $newPassengers[] = [
                                                         'name' => trim($name),
                                                         'ticket_1' => $airline,
                                                         'ticket_2' => null,
@@ -181,7 +183,7 @@ class CardResource extends Resource
                                                         'cost' => 0,
                                                         'tax' => 0,
                                                         'margin' => 0,
-                                                        'pnr' => null,
+                                                        'pnr' => $pnr,
                                                     ];
                                                 }
                                             }
@@ -199,7 +201,7 @@ class CardResource extends Resource
                                                 $formattedDepTime = substr($timeDepRaw, 0, 2) . ':' . substr($timeDepRaw, 2, 2);
                                                 $formattedArrTime = substr($timeArrRaw, 0, 2) . ':' . substr($timeArrRaw, 2, 2);
 
-                                                $flights[] = [
+                                                $newFlights[] = [
                                                     'airline' => $flightMatches[1],
                                                     'flight' => $flightMatches[2],
                                                     'class' => $flightMatches[3],
@@ -212,20 +214,24 @@ class CardResource extends Resource
                                             }
                                         }
 
-                                        $parsedData = [
-                                            'passengers' => $passengers,
-                                            'flights' => $flights,
-                                        ];
+                                        // Retrieve existing passengers and flights
+                                        $existingPassengers = $get('passengers') ?? [];
+                                        $existingFlights = $get('flights') ?? [];
 
-                                        $set('passengers', $parsedData['passengers']);
-                                        $set('flights', $parsedData['flights']);
-                                        $set('sales_price', 0);
-                                        $set('net_cost', 0);
-                                        $set('tax', 0);
-                                        $set('margin', 0);
+                                        // Merge new data while avoiding duplicates
+                                        $mergedPassengers = array_unique(array_merge($existingPassengers, $newPassengers), SORT_REGULAR);
+                                        $mergedFlights = array_unique(array_merge($existingFlights, $newFlights), SORT_REGULAR);
+                                        // dd($mergedPassengers);
+                                        // Set updated data
+                                        $set('passengers', $mergedPassengers);
+                                        $set('flights', $mergedFlights);
+                                        $set('sales_price', 0.00);
+                                        $set('net_cost', 0.00);
+                                        $set('tax', 0.00);
+                                        $set('margin', 0.00);
                                     }
                                 )
-                                ->live(debounce: 500),
+                                ->live(debounce: 200),
                         ]),
                     Tabs::make('Tabs')
                         ->tabs([
@@ -429,14 +435,44 @@ class CardResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->slideOver(),
-                RelationManagerAction::make('lesson-relation-manager')
-                    ->icon('heroicon-o-ticket')
-                    ->label('Receipts')
-                    ->hideRelationManagerHeading(true)
-                    ->slideOver()
-                    ->relationManager(ReceiptsRelationManager::make()),
                 Tables\Actions\EditAction::make()
                     ->color('warning'),
+                Tables\Actions\Action::make('viewInvoice')
+                    ->label('Invoice')
+                    ->icon('heroicon-o-document-text')
+                    ->slideOver()
+                    ->modalHeading(fn($record) => 'Invoice for Card : ' . $record->card_name)
+                    ->modalWidth('3xl')
+                    ->modalContent(function ($record) {
+                        $data = [
+                            'company' => [
+                                'name' => setting('site_name'),
+                                'email' => setting('site_email'),
+                                'phone' => setting('site_phone'),
+                                'address' => setting('site_address'),
+                            ],
+                            'card' => [
+                                'name' => $record->card_name,
+                                'date' => now()->format('d/M/y'),
+                                'due_date' => now()->addDays(30)->format('d/M/y'),
+                                'customer' => $record->customer,
+                                'receipts' => $record->receipts,
+                                'total' => $record->sales_price,
+                                'airline' => $record->airline,
+                            ],
+                            'issued_by' => $record->user->name,
+                            'currency' => setting('site_currency'),
+                            'passengers' => $record->passengers,
+                            'flights' => $record->flights
+                        ];
+                        $pdf = Pdf::loadView('pdf.invoice', $data);
+                        $pdfData = base64_encode($pdf->output());
+                        $pdfSrc = 'data:application/pdf;base64,' . $pdfData;
+                        return view('components.pdf-viewer', ['pdfSrc' => $pdfSrc]);
+
+                    })
+                    ->modalSubmitActionLabel('Email')
+                    ->modalSubmitAction(),
                 Tables\Actions\ActionGroup::make([
                     \Parallax\FilamentComments\Tables\Actions\CommentsAction::make(),
                     Tables\Actions\DeleteAction::make(),
@@ -573,7 +609,7 @@ class CardResource extends Resource
     {
         return [
             'index' => Pages\ListCards::route('/'),
-            // 'create' => Pages\CreateCard::route('/create'),
+            'create' => Pages\CreateCard::route('/create'),
             'edit' => Pages\EditCard::route('/{record}/edit'),
         ];
     }

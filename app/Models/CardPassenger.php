@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CardPassenger extends Model
 {
@@ -55,5 +56,16 @@ class CardPassenger extends Model
     {
         return $this->belongsTo(Airline::class);
     }
+    public function payments()
+    {
+        return $this->belongsToMany(Payment::class, 'payment_passengers', 'card_passenger_id', 'payment_id')
+            ->withPivot('paid');
+    }
+    public function getCardNameAttribute()
+    {
+        return $this->card->card_name ?? 'N/A';
+    }
+
+
 
 }
